@@ -86,4 +86,17 @@ Because all Foreign Key constraints are active before loading data in Task 4, pa
 
 ## 7. Hand Trace from Task 5 (`ProductExceptSelf([1, 2, 3, 4])`)
 
-> _TODO: Complete after solving Task 5 (`dsa/ProductExceptSelf.cs`)._
+Input: `nums = [1, 2, 3, 4]`
+
+- `prefix[i]` = product of all elements strictly to the **left** of index `i` (`prefix[0] = 1`).
+- `suffix[i]` = product of all elements strictly to the **right** of index `i` (`suffix[3] = 1`).
+- `result[i] = prefix[i] * suffix[i]`.
+
+| Index `i` | `nums[i]` | `prefix[i]` | `suffix[i]` | `result[i] = prefix[i] * suffix[i]` |
+| :---: | :---: | :--- | :--- | :---: |
+| `0` | `1` | `1` | `2 * 3 * 4 = 24` | `1 * 24 = 24` |
+| `1` | `2` | `1` | `3 * 4 = 12` | `1 * 12 = 12` |
+| `2` | `3` | `1 * 2 = 2` | `4` | `2 * 4 = 8` |
+| `3` | `4` | `1 * 2 * 3 = 6` | `1` | `6 * 1 = 6` |
+
+Output: `[24, 12, 8, 6]`
