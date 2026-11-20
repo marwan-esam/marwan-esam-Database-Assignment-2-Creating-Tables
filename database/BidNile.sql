@@ -275,6 +275,7 @@ ALTER TABLE Operations.Warehouse
 DROP CONSTRAINT CK_Warehouse_Capacity;
 
 EXEC sp_rename 'Operations.Warehouse.Capacity', 'MaxItems', 'COLUMN';
+GO
 
 ALTER TABLE Operations.Warehouse
 ADD CONSTRAINT CK_Warehouse_MaxItems CHECK (MaxItems > 0);
