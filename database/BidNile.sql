@@ -207,3 +207,146 @@ CREATE TABLE Sales.AuctionFollower
   -- foreign key: FollowerId (Member)
 );
 GO
+
+
+-- ============================================================
+-- Task 3 — ALTER: Business Changes
+-- ============================================================
+
+-- 3.1
+ALTER TABLE Core.Member
+ADD CONSTRAINT FK_Member_Member FOREIGN KEY (ReferrerId) REFERENCES Core.Member (Id),
+    CONSTRAINT FK_Member_City FOREIGN KEY (CityId) REFERENCES Operations.City (Id);
+
+ALTER TABLE Core.Employee
+ADD CONSTRAINT FK_Employee_Member FOREIGN KEY (MemberId) REFERENCES Core.Member (Id),
+    CONSTRAINT FK_Employee_Warehouse FOREIGN KEY (WarehouseId) REFERENCES Operations.Warehouse (Id);
+
+ALTER TABLE Core.Wallet
+ADD CONSTRAINT FK_Wallet_Member FOREIGN KEY (MemberId) REFERENCES Core.Member (Id);
+
+ALTER TABLE Operations.Warehouse
+ADD CONSTRAINT FK_Warehouse_City FOREIGN KEY (CityId) REFERENCES Operations.City (Id),
+    CONSTRAINT FK_Warehouse_Employee FOREIGN KEY (ManagerId) REFERENCES Core.Employee (MemberId);
+
+ALTER TABLE Catalogue.Category
+ADD CONSTRAINT FK_Category_Category FOREIGN KEY (SuperCategoryCode) REFERENCES Catalogue.Category (Code);
+
+ALTER TABLE Catalogue.Item
+ADD CONSTRAINT FK_Item_Category FOREIGN KEY (CategoryCode) REFERENCES Catalogue.Category (Code),
+    CONSTRAINT FK_Item_Warehouse FOREIGN KEY (WarehouseId) REFERENCES Operations.Warehouse (Id),
+    CONSTRAINT FK_Item_Member FOREIGN KEY (SellerId) REFERENCES Core.Member (Id),
+    CONSTRAINT FK_Item_Employee FOREIGN KEY (InspectorId) REFERENCES Core.Employee (MemberId);
+
+ALTER TABLE Catalogue.Photo
+ADD CONSTRAINT FK_Photo_Item FOREIGN KEY (ItemId) REFERENCES Catalogue.Item (Id) ON DELETE CASCADE;
+
+ALTER TABLE Sales.Auction
+ADD CONSTRAINT FK_Auction_Item FOREIGN KEY (ItemId) REFERENCES Catalogue.Item (Id);
+
+ALTER TABLE Sales.Bid
+ADD CONSTRAINT FK_Bid_Auction FOREIGN KEY (AuctionId) REFERENCES Sales.Auction (Id),
+    CONSTRAINT FK_Bid_Member FOREIGN KEY (BidderId) REFERENCES Core.Member (Id);
+
+ALTER TABLE Sales.AuctionFollower
+ADD CONSTRAINT FK_AuctionFollower_Auction FOREIGN KEY (AuctionId) REFERENCES Sales.Auction (Id),
+    CONSTRAINT FK_AuctionFollower_Member FOREIGN KEY (FollowerId) REFERENCES Core.Member (Id);
+GO
+
+-- 3.2
+ALTER TABLE Core.Member
+ADD AppLanguage CHAR(2) NOT NULL
+        CONSTRAINT DF_Member_AppLanguage DEFAULT 'ar' WITH VALUES,
+    CONSTRAINT CK_Member_AppLanguage CHECK (AppLanguage IN ('ar', 'en'));
+GO
+
+-- 3.3
+ALTER TABLE Catalogue.Item
+ADD IsFeatured BIT NOT NULL
+    CONSTRAINT DF_Item_IsFeatured DEFAULT 0 WITH VALUES;
+GO
+
+-- 3.4
+EXEC sp_rename 'Sales.Bid.DeviceIPAddress', 'DeviceIp', 'COLUMN';
+EXEC sp_rename 'Operations.Warehouse.Capacity', 'MaxItems', 'COLUMN';
+GO
+
+-- 3.5
+ALTER TABLE Core.Member
+ALTER COLUMN FullName NVARCHAR(150) NOT NULL;
+GO
+
+-- 3.6
+-- Altering MaxItems directly fails because CK_Warehouse_Capacity depends on it.
+-- Drop the CHECK constraint first, change the column to SMALLINT (max 32,767), then re-add the CHECK.
+ALTER TABLE Operations.Warehouse
+DROP CONSTRAINT CK_Warehouse_Capacity;
+
+ALTER TABLE Operations.Warehouse
+ALTER COLUMN MaxItems SMALLINT NOT NULL;
+
+ALTER TABLE Operations.Warehouse
+ADD CONSTRAINT CK_Warehouse_MaxItems CHECK (MaxItems > 0);
+GO
+
+-- 3.7
+ALTER TABLE Catalogue.Category
+DROP CONSTRAINT CK_Category_Commission;
+
+ALTER TABLE Catalogue.Category
+ADD CONSTRAINT CK_Category_Commission CHECK (Commission BETWEEN 0 AND 25);
+GO
+
+-- 3.8
+ALTER TABLE Sales.Auction
+DROP CONSTRAINT CK_Auction_Status;
+
+ALTER TABLE Sales.Auction
+ADD CONSTRAINT CK_Auction_Status CHECK (Status IN ('PendingReview', 'Draft', 'Live', 'Ended', 'Cancelled'));
+
+ALTER TABLE Sales.Auction
+DROP CONSTRAINT DF_Auction_Status;
+
+ALTER TABLE Sales.Auction
+ADD CONSTRAINT DF_Auction_Status DEFAULT 'PendingReview' FOR Status;
+GO
+
+-- 3.9
+ALTER TABLE Sales.Auction
+ADD BuyNowPrice DECIMAL(12, 2) NULL;
+GO
+
+-- Use WITH CHECK: BuyNowPrice is a newly added nullable column, so every existing row has NULL
+-- (which passes the CHECK condition). WITH CHECK validates existing rows and marks the constraint
+-- as trusted (is_not_trusted = 0) so the SQL Server query optimizer can rely on it.
+-- WITH NOCHECK would skip validation and leave the constraint untrusted for no benefit here.
+ALTER TABLE Sales.Auction
+WITH CHECK ADD CONSTRAINT CK_Auction_BuyNowPrice
+    CHECK (BuyNowPrice IS NULL OR BuyNowPrice > StartingPrice);
+GO
+
+-- 3.10
+ALTER TABLE Core.Member
+ADD CONSTRAINT UQ_Member_PhoneNumber UNIQUE (PhoneNumber);
+GO
+
+-- 3.11
+-- Dropping IsVerified directly fails because DF_Member_IsVerified is bound to it.
+-- Add VerifiedAt, drop the default constraint first, then drop IsVerified.
+ALTER TABLE Core.Member
+ADD VerifiedAt DATETIME2(3) NULL;
+
+ALTER TABLE Core.Member
+DROP CONSTRAINT DF_Member_IsVerified;
+
+ALTER TABLE Core.Member
+DROP COLUMN IsVerified;
+GO
+
+-- 3.12
+CREATE SCHEMA Marketing;
+GO
+
+ALTER SCHEMA Marketing
+TRANSFER Sales.AuctionFollower;
+GO
