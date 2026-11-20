@@ -268,7 +268,16 @@ GO
 
 -- 3.4
 EXEC sp_rename 'Sales.Bid.DeviceIPAddress', 'DeviceIp', 'COLUMN';
+
+-- sp_rename blocks renaming a column with an enforced CHECK constraint (Msg 15336),
+-- so drop CK_Warehouse_Capacity, rename the column, and re-add the CHECK constraint.
+ALTER TABLE Operations.Warehouse
+DROP CONSTRAINT CK_Warehouse_Capacity;
+
 EXEC sp_rename 'Operations.Warehouse.Capacity', 'MaxItems', 'COLUMN';
+
+ALTER TABLE Operations.Warehouse
+ADD CONSTRAINT CK_Warehouse_MaxItems CHECK (MaxItems > 0);
 GO
 
 -- 3.5
@@ -277,10 +286,10 @@ ALTER COLUMN FullName NVARCHAR(150) NOT NULL;
 GO
 
 -- 3.6
--- Altering MaxItems directly fails because CK_Warehouse_Capacity depends on it.
+-- Altering MaxItems directly fails because CK_Warehouse_MaxItems depends on it.
 -- Drop the CHECK constraint first, change the column to SMALLINT (max 32,767), then re-add the CHECK.
 ALTER TABLE Operations.Warehouse
-DROP CONSTRAINT CK_Warehouse_Capacity;
+DROP CONSTRAINT CK_Warehouse_MaxItems;
 
 ALTER TABLE Operations.Warehouse
 ALTER COLUMN MaxItems SMALLINT NOT NULL;

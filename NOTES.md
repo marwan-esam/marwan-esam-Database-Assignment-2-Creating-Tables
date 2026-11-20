@@ -76,8 +76,8 @@ Because all Foreign Key constraints are active before loading data in Task 4, pa
 ## 6. The Errors in Tasks 3.6 and 3.11, and How They Were Fixed
 
 - **Task 3.6 (`ALTER COLUMN MaxItems SMALLINT NOT NULL`):**
-  - **Error:** SQL Server blocks `ALTER COLUMN` on `Operations.Warehouse.MaxItems` with *`The object 'CK_Warehouse_Capacity' is dependent on column 'MaxItems'. ALTER TABLE ALTER COLUMN MaxItems failed because one or more objects access this column.`*
-  - **Fix:** Drop the dependent check constraint (`DROP CONSTRAINT CK_Warehouse_Capacity`), run `ALTER COLUMN MaxItems SMALLINT NOT NULL`, and re-create the check constraint (`ADD CONSTRAINT CK_Warehouse_MaxItems CHECK (MaxItems > 0)`).
+  - **Error:** SQL Server blocks `ALTER COLUMN` on `Operations.Warehouse.MaxItems` with *`The object 'CK_Warehouse_MaxItems' is dependent on column 'MaxItems'. ALTER TABLE ALTER COLUMN MaxItems failed because one or more objects access this column.`* (Similarly in Task 3.4, `sp_rename` failed with `Msg 15336` until `CK_Warehouse_Capacity` was dropped and re-added as `CK_Warehouse_MaxItems`.)
+  - **Fix:** Drop the dependent check constraint (`DROP CONSTRAINT CK_Warehouse_MaxItems`), run `ALTER COLUMN MaxItems SMALLINT NOT NULL`, and re-create the check constraint (`ADD CONSTRAINT CK_Warehouse_MaxItems CHECK (MaxItems > 0)`).
 - **Task 3.11 (`DROP COLUMN IsVerified`):**
   - **Error:** SQL Server blocks `DROP COLUMN` on `Core.Member.IsVerified` with *`The object 'DF_Member_IsVerified' is dependent on column 'IsVerified'. ALTER TABLE DROP COLUMN IsVerified failed because one or more objects access this column.`*
   - **Fix:** Add `VerifiedAt DATETIME2(3) NULL`, explicitly drop the attached default constraint (`DROP CONSTRAINT DF_Member_IsVerified`), and then run `DROP COLUMN IsVerified`.
