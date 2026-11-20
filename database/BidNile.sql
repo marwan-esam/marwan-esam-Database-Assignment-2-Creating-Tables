@@ -127,7 +127,8 @@ CREATE TABLE Catalogue.Item
   Description NVARCHAR(MAX) NULL,
   ConditionScore TINYINT NOT NULL -- check between 1 and 10
     CONSTRAINT CK_Item_ConditionScore CHECK (ConditionScore BETWEEN 1 AND 10),
-  Specifications JSON NOT NULL,
+  Specifications NVARCHAR(MAX) NOT NULL
+    CONSTRAINT CK_Item_Specifications CHECK (ISJSON(Specifications) = 1),
   ListedAt DATETIME2(3) NOT NULL -- default SYSDATETIME()
     CONSTRAINT DF_Item_ListedAt DEFAULT SYSDATETIME(),
   CategoryCode INT NOT NULL, -- foreign key
